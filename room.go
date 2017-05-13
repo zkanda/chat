@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/zkanda/trace"
 )
 
 type room struct {
@@ -17,6 +18,9 @@ type room struct {
 	leave chan *client
 	// clients holds all current clients in this room.
 	clients map[*client]bool
+	// tracer wil receive trace information of activity
+	// in the room.
+	tracer trace.Tracer
 }
 
 // newRoom makes a new room.
@@ -26,18 +30,9 @@ func newRoom() *room {
 		join:    make(chan *client),
 		leave:   make(chan *client),
 		clients: make(map[*client]bool),
+		tracer:  trace.Off(),
 	}
 }
-
-// // newRoom makes a new room
-// func newRoom() *room {
-// 	return &room{
-// 		forward: make(chan []byte),
-// 		join:    make(chan *client),
-// 		leave:   make(chan *client),
-// 		clients: make(map[*client]bool),
-// 	}
-// }
 
 func (r *room) run() {
 	for {
@@ -45,14 +40,18 @@ func (r *room) run() {
 		case client := <-r.join:
 			// joining
 			r.clients[client] = true
+			r.tracer.Trace("New client joined")
 		case client := <-r.leave:
 			// leaving
 			delete(r.clients, client)
 			close(client.send)
+			r.tracer.Trace("Client left")
 		case msg := <-r.forward:
+			r.tracer.Trace("Message received:", string(msg))
 			// forward message to all clients
 			for client := range r.clients {
 				client.send <- msg
+				r.tracer.Trace(" -- sent to client")
 			}
 		}
 	}
