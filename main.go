@@ -15,6 +15,9 @@ import (
 	"github.com/zkanda/trace"
 )
 
+// set the active Avatar implementation
+var avatars Avatar = UserFileSystemAvatar
+
 // templ represents a single template
 type templateHandler struct {
 	once     sync.Once
@@ -48,7 +51,7 @@ func main() {
 			"http://localhost:8080/auth/callback/google",
 		),
 	)
-	r := newRoom(UserAuthAvatar)
+	r := newRoom()
 	r.tracer = trace.New(os.Stdout)
 	http.Handle("/chat", MustAuth(&templateHandler{filename: "chat.html"}))
 	http.Handle("/login", &templateHandler{filename: "login.html"})
