@@ -16,7 +16,11 @@ import (
 )
 
 // set the active Avatar implementation
-var avatars Avatar = UserFileSystemAvatar
+var avatars Avatar = TryAvatars{
+	UserFileSystemAvatar,
+	UserAuthAvatar,
+	UserGravatar,
+}
 
 // templ represents a single template
 type templateHandler struct {
